@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.23.0/dist/phaser.min.js"></script>
+</head>
+<body>
+<style>
+    html, body {
+        height: 100%;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background: yellow;
+        color: red;
+        font: caption;
+    }
+
+    #version {
+        position: absolute;
+        left: 5px;
+        top: 605px;
+    }
+</style>
+<script>
+    class Demo extends Phaser.Scene {
+        constructor() {
+            super({
+                key: 'examples'
+            })
+        }
+
+        preload() {
+            var url;
+
+            url = 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexvirtualjoystickplugin.min.js';
+            this.load.plugin('rexvirtualjoystickplugin', url, true);
+
+            this.load.image("soldier", "sol.png");
+            this.load.image("fire", "crosshair.png");
+        }
+
+        create() {
+            this.joyStick = this.plugins.get('rexvirtualjoystickplugin').add(this, {
+                x: 400,
+                y: 300,
+                radius: 100,
+                base: this.add.circle(0, 0, 30, 0xffffff),
+                thumb: this.add.circle(0, 0, 15, 0x000000),
+                // dir: '8dir',   // 'up&down'|0|'left&right'|1|'4dir'|2|'8dir'|3
+                // forceMin: 16,
+                // enable: true
+            }).on('update', this.dumpJoyStickState, this);
+
+            this.text = this.add.text(0, 0);
+            this.dumpJoyStickState();
+
+            //вставка солдата
+            this.soldier = this.add.sprite(50, 50, "soldier").setScale(0.5);
+            var fireb = this.add.image(200, 200, 'fire').setScale(0.3);
+            fireb.setInteractive();
+            fireb.on('clicked',
+                function (button) {
+                    button.setVisible(false);
+                }, this);
+
+
+        }
+
+        update() {
+            //this.soldier.x+=1;
+            // console.log("force: " + this.joyStick.force);
+            // console.log("angel: " + this.joyStick.angle);
+            this.soldier.angle = this.joyStick.angle;
+
+            this.soldier.x += (this.joyStick.force/50)*Math.cos(this.soldier.angle*Math.PI/180)
+            this.soldier.y += (this.joyStick.force/50)*Math.sin(this.soldier.angle*Math.PI/180)
+
+            /*if (this.joyStick.force > 0) {
+                if (this.joyStick.angle > 45 && this.joyStick.angle < 135) {
+                    this.soldier.y += 1 * (this.joyStick.force / 50);
+                }
+                else if (this.joyStick.angle > -45 && this.joyStick.angle < 45) {
+                    this.soldier.x += 1 * (this.joyStick.force / 50);
+                }
+                else if (this.joyStick.angle < -135 && this.joyStick.angle > -180) {
+                    this.soldier.x -= 1 * (this.joyStick.force / 50);
+                }
+                else if (this.joyStick.angle > 135 && this.joyStick.angle < 180) {
+                    this.soldier.x -= 1 * (this.joyStick.force / 50);
+                }
+                if (this.joyStick.angle > -135 && this.joyStick.angle < -45) {
+                    this.soldier.y -= 1 * (this.joyStick.force / 50);
+                }
+                if (this.joyStick.angle > -45 && this.joyStick.angle < -40) {
+                    //this.soldier.y+=1 && this.soldier.x+=1
+                }
+            }*/
+
+        }
+
+         fireClick(){
+            console.log('lololohka');
+        }
+
+        dumpJoyStickState() {
+            var cursorKeys = this.joyStick.createCursorKeys();
+            var s = 'Key down: ';
+            for (var name in cursorKeys) {
+                if (cursorKeys[name].isDown) {
+                    s += name + ' ';
+                }
+            }
+            s += '\n';
+            s += ('Force: ' + Math.floor(this.joyStick.force * 100) / 100 + '\n');
+            s += ('Angle: ' + Math.floor(this.joyStick.angle * 100) / 100 + '\n');
+            this.text.setText(s);
+        }
+    }
+
+    var config = {
+        type: Phaser.AUTO,
+        parent: 'phaser-example',
+        width: 800,
+        height: 600,
+        scene: Demo,
+        backgroundColor: 0x333333
+    };
+
+    var game = new Phaser.Game(config);
+</script>
+</body>
+</html>
