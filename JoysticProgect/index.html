@@ -26,6 +26,15 @@
     }
 </style>
 <script>
+
+    var bullets;
+    var ship;
+    var speed;
+    var stats;
+    var cursors;
+    var lastFired = 0;
+
+
     class Demo extends Phaser.Scene {
         constructor() {
             super({
@@ -41,6 +50,7 @@
 
             this.load.image("soldier", "sol.png");
             this.load.image("fire", "crosshair.png");
+            this.load.image("bullet", "bullet.png");
         }
 
         create() {
@@ -59,7 +69,7 @@
             this.dumpJoyStickState();
 
             //вставка солдата
-            this.soldier = this.add.sprite(50, 50, "soldier").setScale(0.5);
+            this.soldier = this.add.sprite(50, 50, "soldier").setScale(0.3);
             var fireb = this.add.image(200, 200, 'fire').setScale(0.3);
             fireb.setInteractive();
             fireb.on('clicked',
@@ -67,17 +77,92 @@
                     button.setVisible(false);
                 }, this);
 
+            var Bullet = new Phaser.Class({
+
+                Extends: Phaser.GameObjects.Image,
+
+                initialize:
+
+                    function Bullet (scene)
+                    {
+                        Phaser.GameObjects.Image.call(this, scene, 0, 0, 'bullet');
+
+                        this.speed = Phaser.Math.GetSpeed(400, 1);
+
+                    },
+
+                fire: function (x, y, angle)
+                {
+
+                    this.angle=angle;
+
+                    this.setPosition(x, y + 26);
+
+                    this.setActive(true);
+                    this.setVisible(true);
+                },
+
+                update: function (time, delta)
+                {
+                    //this.y -= this.speed * delta;
+
+                    this.x += this.speed * delta*Math.cos(this.angle*Math.PI/180)
+                    this.y += this.speed * delta*Math.sin(this.angle*Math.PI/180)
+
+                    if (this.y < -50 ||this.y > 600 ||this.x < -50 ||this.x > 800 ) //todo
+                    {
+                        this.setActive(false);
+                        this.setVisible(false);
+                    }
+                }
+
+            });
+
+            bullets = this.add.group({
+                classType: Bullet,
+                maxSize: 10,
+                runChildUpdate: true
+            });
+
+            cursors = this.input.keyboard.createCursorKeys();
+
+            speed = Phaser.Math.GetSpeed(300, 1);
 
         }
 
-        update() {
+        update(time, delta) {
+
+            if (cursors.space.isDown && time > lastFired)
+            {
+                console.log("123456");
+                var bullet = bullets.get();
+
+                if (bullet)
+                {
+                    bullet.fire( this.soldier.x,  this.soldier.y,this.soldier.angle);
+
+                    lastFired = time + 50;
+                }
+            }
+
             //this.soldier.x+=1;
             // console.log("force: " + this.joyStick.force);
             // console.log("angel: " + this.joyStick.angle);
-            this.soldier.angle = this.joyStick.angle;
 
-            this.soldier.x += (this.joyStick.force/50)*Math.cos(this.soldier.angle*Math.PI/180)
-            this.soldier.y += (this.joyStick.force/50)*Math.sin(this.soldier.angle*Math.PI/180)
+            if (this.joyStick.angle != 0){
+                this.soldier.angle = this.joyStick.angle;
+            }
+
+            // checking map borders
+            if(
+                (this.soldier.x+ (this.joyStick.force / 50) * Math.cos(this.soldier.angle * Math.PI / 180)>0) &&
+                (this.soldier.x+ (this.joyStick.force / 50) * Math.cos(this.soldier.angle * Math.PI / 180)<800) &&
+                (this.soldier.y+ (this.joyStick.force / 50) * Math.sin(this.soldier.angle * Math.PI / 180)>0) &&
+                (this.soldier.y+ (this.joyStick.force / 50) * Math.sin(this.soldier.angle * Math.PI / 180)<600)
+            ) {
+                this.soldier.x += (this.joyStick.force / 50) * Math.cos(this.soldier.angle * Math.PI / 180)
+                this.soldier.y += (this.joyStick.force / 50) * Math.sin(this.soldier.angle * Math.PI / 180)
+            }
 
             /*if (this.joyStick.force > 0) {
                 if (this.joyStick.angle > 45 && this.joyStick.angle < 135) {
