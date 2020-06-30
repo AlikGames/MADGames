@@ -28,11 +28,13 @@
 <script>
 
     var bullets;
+    var enemyBullets;
     var ship;
     var speed;
     var stats;
     var cursors;
     var lastFired = 0;
+    var enemyFlag = 0;
 
 
     class Demo extends Phaser.Scene {
@@ -49,6 +51,7 @@
             this.load.plugin('rexvirtualjoystickplugin', url, true);
 
             this.load.image("soldier", "sol.png");
+            this.load.image("enemySoldier", "enemySol.png");
             this.load.image("fire", "crosshair.png");
             this.load.image("bullet", "bullet.png");
         }
@@ -77,6 +80,11 @@
                     button.setVisible(false);
                 }, this);
 
+            //вставка солдата противника
+            this.enemySoldier = this.physics.add.sprite(100, 200, "enemySoldier").setScale(0.3);
+            enemyFlag = 1;
+            this.enemySoldier.body.setAllowGravity(false);
+
             var Bullet = new Phaser.Class({
 
                 Extends: Phaser.GameObjects.Image,
@@ -102,6 +110,19 @@
                     this.setVisible(true);
                 },
 
+                enemyFire: function (x, y, angle)
+                {
+
+                    this.angle=angle;
+
+                    this.setPosition(x, y + 26);
+
+                    this.setActive(true);
+                    this.setVisible(true);
+                },
+
+                //this.physics.add.overlap(this.enemySoldier, bullets, this.gettingTarget, null, this);
+
                 update: function (time, delta)
                 {
                     //this.y -= this.speed * delta;
@@ -124,6 +145,12 @@
                 runChildUpdate: true
             });
 
+            enemyBullets = this.add.group({
+                classType: Bullet,
+                maxSize: 10,
+                runChildUpdate: true
+            });
+
             cursors = this.input.keyboard.createCursorKeys();
 
             speed = Phaser.Math.GetSpeed(300, 1);
@@ -134,12 +161,24 @@
 
             if (cursors.space.isDown && time > lastFired)
             {
-                console.log("123456");
                 var bullet = bullets.get();
 
                 if (bullet)
                 {
                     bullet.fire( this.soldier.x,  this.soldier.y,this.soldier.angle);
+
+                    lastFired = time + 50;
+                }
+            }
+
+            if (enemyFlag == 1)
+            {
+                console.log("enemy spoted");
+                var enBullet = enemyBullets.get();
+
+                if (enBullet)
+                {
+                    enBullet.fire( this.enemySoldier.x,  this.enemySoldier.y,this.enemySoldier.angle);
 
                     lastFired = time + 50;
                 }
@@ -153,7 +192,7 @@
                 this.soldier.angle = this.joyStick.angle;
             }
 
-            // checking map borders
+            // проверка границ карты
             if(
                 (this.soldier.x+ (this.joyStick.force / 50) * Math.cos(this.soldier.angle * Math.PI / 180)>0) &&
                 (this.soldier.x+ (this.joyStick.force / 50) * Math.cos(this.soldier.angle * Math.PI / 180)<800) &&
@@ -187,6 +226,11 @@
 
         }
 
+        gettingTarget (enemy, bullet)
+        {
+            enemy.disableBody(true, true);
+        }
+
          fireClick(){
             console.log('lololohka');
         }
@@ -212,7 +256,14 @@
         width: 800,
         height: 600,
         scene: Demo,
-        backgroundColor: 0x333333
+        backgroundColor: 0x333333,
+        physics: {
+            default: 'arcade',
+            arcade: {
+                gravity: { y: 300 },
+                debug: false
+            }
+        }
     };
 
     var game = new Phaser.Game(config);
